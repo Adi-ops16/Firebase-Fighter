@@ -1,0 +1,187 @@
+import React, { useState } from 'react';
+import MyContainer from './MyContainer';
+import { Link } from 'react-router';
+import { FiEyeOff } from 'react-icons/fi';
+import { FaEye } from 'react-icons/fa';
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { auth } from '../Firebase/firebase.config';
+import { toast } from 'react-toastify';
+
+const SignIn = () => {
+
+    const [show, setShow] = useState(true)
+    const [user, setUser] = useState(null)
+    const googleProvider = new GoogleAuthProvider()
+
+    const handlePasswordHide = () => {
+        setShow(!show)
+    }
+
+    const handleSignIn = (e) => {
+        e.preventDefault()
+        const email = e.target.email.value
+        const password = e.target.password.value
+
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then(res => {
+                toast.success("Welcome Back❤️")
+                setUser(res.user);
+            })
+            .catch(error => {
+                if (error.code === "auth/invalid-credential") {
+                    toast.error("❌ Invalid email or password.");
+                } else if (error.code === "auth/user-not-found") {
+                    toast.error("⚠️ No account found with this email.");
+                } else if (error.code === "auth/wrong-password") {
+                    toast.error("🔐 Incorrect password.");
+                } else if (error.code === "auth/invalid-email") {
+                    toast.error("📧 Please enter a valid email.");
+                } else if (error.code === "auth/too-many-requests") {
+                    toast.error("🚫 Too many failed attempts. Try again later.");
+                } else {
+                    toast.error("❗ Login failed. Please try again.");
+                    console.log(error.code);
+                }
+            })
+    }
+
+    const handleSignOut = () => {
+        signOut(auth)
+            .then(() => {
+                toast.success("successfully logged out")
+                setUser(null)
+            })
+            .catch(error => toast.error(error.message))
+    }
+
+    const handleGoogleSignIn = () => {
+        signInWithPopup(auth, googleProvider)
+            .then(result => {
+                setUser(result.user)
+                toast.success("successfully logged in")
+            })
+            .catch(error => {
+                if (error.code === "auth/popup-closed-by-user") {
+                    toast.error("❌ Popup closed before sign-in.");
+                } else if (error.code === "auth/cancelled-popup-request") {
+                    toast.error("⚠️ Another popup is already open.");
+                } else if (error.code === "auth/popup-blocked") {
+                    toast.error("🚫 Browser blocked the sign-in popup.");
+                } else if (error.code === "auth/unauthorized-domain") {
+                    toast.error("🔒 This domain is not authorized in Firebase.");
+                } else if (error.code === "auth/account-exists-with-different-credential") {
+                    toast.error("⚠️ Account exists with another sign-in method.");
+                } else if (error.code === "auth/network-request-failed") {
+                    toast.error("🌐 Network error. Check your connection.");
+                } else {
+                    toast.error("❗ Something went wrong. Try again.");
+                    console.log(error.code);
+                }
+            })
+    }
+
+    return (
+        <div className="min-h-[calc(100vh-20px)] flex items-center justify-center bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 relative overflow-hidden">
+            {/* Animated glow orbs */}
+            <div className="absolute inset-0">
+                <div className="absolute w-72 h-72 bg-purple-400/30 rounded-full blur-xl top-10 left-10 animate-pulse"></div>
+                <div className="absolute w-72 h-72 bg-blue-400/30 rounded-full blur-xl bottom-10 right-10 animate-pulse"></div>
+            </div>
+
+            <MyContainer>
+                <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10 p-6 lg:p-10 text-white">
+                    {/* Left section */}
+                    <div className="max-w-lg text-center lg:text-left">
+                        <h1 className="text-5xl font-extrabold drop-shadow-lg">
+                            Welcome Back
+                        </h1>
+                        <p className="mt-4 text-lg text-white/80 leading-relaxed">
+                            Sign in to continue your journey. Manage your account, explore new
+                            features, and more.
+                        </p>
+                    </div>
+
+                    {/* Login card */}
+                    <div className="w-full max-w-md backdrop-blur-lg bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-8">
+
+                        {user ?
+                            <div className='text-center space-y-3'>
+                                <img
+                                    className='w-20 h-20 rounded-full mx-auto'
+                                    src={user?.photoURL || null}
+                                    alt="" />``
+                                <h2 className='text-xl font-semibold'>{user?.displayName}</h2>
+                                <h2 className='text-white/80'>{user?.email}</h2>
+                                <button onClick={handleSignOut} className='my-btn'>Sign Out</button>
+                            </div>
+                            : <form onSubmit={handleSignIn} className="space-y-5">
+                                <h2 className="text-2xl font-semibold mb-2 text-center text-white">
+                                    Sign In
+                                </h2>
+
+                                <div>
+                                    <label className="block text-sm mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        placeholder="example@email.com"
+                                        className="input input-bordered w-full bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    />
+                                </div>
+
+                                <div className="relative">
+                                    <label className="block text-sm mb-1">Password</label>
+                                    <input
+                                        type={show ? "password" : "text"}
+                                        name="password"
+                                        placeholder="••••••••"
+                                        className="input input-bordered w-full bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    />
+                                    <span onClick={handlePasswordHide} className='absolute right-2 top-9 cursor-pointer z-10'>
+                                        {show ? <FiEyeOff></FiEyeOff> : <FaEye></FaEye>}
+                                    </span>
+                                </div>
+
+                                <button type="submit" className="my-btn">
+                                    Login
+                                </button>
+
+                                {/* Divider */}
+                                <div className="flex items-center justify-center gap-2 my-2">
+                                    <div className="h-px w-16 bg-white/30"></div>
+                                    <span className="text-sm text-white/70">or</span>
+                                    <div className="h-px w-16 bg-white/30"></div>
+                                </div>
+
+                                {/* Google Signin */}
+                                <button onClick={handleGoogleSignIn}
+                                    type="button"
+                                    className="flex items-center justify-center gap-3 bg-white text-gray-800 px-5 py-2 rounded-lg w-full font-semibold hover:bg-gray-100 transition-colors cursor-pointer"
+                                >
+                                    <img
+                                        src="https://www.svgrepo.com/show/475656/google-color.svg"
+                                        alt="google"
+                                        className="w-5 h-5"
+                                    />
+                                    Continue with Google
+                                </button>
+
+                                <p className="text-center text-sm text-white/80 mt-3">
+                                    Don’t have an account?{" "}
+                                    <Link
+                                        to="/signup"
+                                        className="text-pink-300 hover:text-white underline"
+                                    >
+                                        Sign up
+                                    </Link>
+                                </p>
+                            </form>}
+                    </div>
+                </div>
+            </MyContainer>
+        </div>
+    );
+};
+
+export default SignIn;
